@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Upload → WebP</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+      color: #1a1a2e;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .drop-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: #f8fafc;
+    }
+
+    .drop-zone.dragover {
+      border-color: #6366f1;
+      background: #eef2ff;
+    }
+
+    .drop-zone svg {
+      width: 48px;
+      height: 48px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+
+    .drop-zone p {
+      color: #64748b;
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+
+    .btn-primary {
+      background: #6366f1;
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    #fileInput { display: none; }
+
+    .progress-wrap {
+      margin-top: 20px;
+      display: none;
+    }
+
+    .progress-label {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar-bg {
+      background: #e2e8f0;
+      border-radius: 999px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #6366f1;
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .result {
+      margin-top: 24px;
+      display: none;
+    }
+
+    .result-image {
+      width: 100%;
+      border-radius: 10px;
+      object-fit: contain;
+      max-height: 320px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+
+    .meta {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .meta-item {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    .meta-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .meta-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-top: 2px;
+    }
+
+    .savings {
+      color: #16a34a;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #dcfce7;
+      color: #16a34a;
+      margin-left: 6px;
+    }
+
+    .badge.animated {
+      background: #ede9fe;
+      color: #7c3aed;
+    }
+
+    .download-link {
+      display: block;
+      text-align: center;
+      margin-top: 14px;
+      color: #6366f1;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .download-link:hover { text-decoration: underline; }
+
+    .error {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      color: #dc2626;
+      font-size: 0.9rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Image → WebP Converter</h1>
+  <p class="subtitle">Upload any image and get a converted WebP file back</p>
+
+  <div class="card">
+    <div class="drop-zone" id="dropZone">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+      </svg>
+      <p>Drag &amp; drop an image here, or</p>
+      <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Choose File</button>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-label">Converting…</div>
+      <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="result" id="result">
+      <img class="result-image" id="resultImage" src="" alt="Converted image">
+
+      <div class="meta">
+        <div class="meta-item">
+          <div class="meta-label">Original format</div>
+          <div class="meta-value" id="metaFormat">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Dimensions</div>
+          <div class="meta-value" id="metaDimensions">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Original size</div>
+          <div class="meta-value" id="metaOriginalSize">—</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">WebP size</div>
+          <div class="meta-value" id="metaWebpSize">—</div>
+        </div>
+      </div>
+
+      <a class="download-link" id="downloadLink" href="#" download>Download WebP file</a>
+
+      <button class="btn btn-secondary" onclick="reset()">Upload another image</button>
+    </div>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) upload(file);
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) upload(fileInput.files[0]);
+    });
+
+    function fmt(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    async function upload(file) {
+      showError('');
+      document.getElementById('result').style.display = 'none';
+
+      const progressWrap = document.getElementById('progressWrap');
+      const progressBar = document.getElementById('progressBar');
+      progressWrap.style.display = 'block';
+
+      // Animate progress bar while waiting (indeterminate feel)
+      let p = 0;
+      const tick = setInterval(() => {
+        p = p < 85 ? p + 2 : p;
+        progressBar.style.width = p + '%';
+      }, 60);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/images/', { method: 'POST', body: formData });
+        clearInterval(tick);
+        progressBar.style.width = '100%';
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        // Fetch the actual WebP blob for preview + download
+        const imgRes = await fetch(data.url);
+        const blob = await imgRes.blob();
+        const objectUrl = URL.createObjectURL(blob);
+
+        document.getElementById('resultImage').src = objectUrl;
+
+        const savings = Math.round((1 - data.size_bytes / file.size) * 100);
+        const savingsText = savings > 0
+          ? `<span class="savings">(${savings}% smaller)</span>`
+          : savings < 0 ? `<span style="color:#dc2626">(${Math.abs(savings)}% larger)</span>` : '';
+
+        document.getElementById('metaFormat').innerHTML =
+          data.original_format +
+          (data.animated ? '<span class="badge animated">animated</span>' : '<span class="badge">static</span>');
+        document.getElementById('metaDimensions').textContent = `${data.width} × ${data.height}`;
+        document.getElementById('metaOriginalSize').textContent = fmt(file.size);
+        document.getElementById('metaWebpSize').innerHTML = fmt(data.size_bytes) + ' ' + savingsText;
+
+        const dl = document.getElementById('downloadLink');
+        dl.href = objectUrl;
+        dl.download = data.filename;
+
+        progressWrap.style.display = 'none';
+        progressBar.style.width = '0%';
+        document.getElementById('result').style.display = 'block';
+      } catch (err) {
+        clearInterval(tick);
+        progressWrap.style.display = 'none';
+        progressBar.style.width = '0%';
+        showError(err.message);
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+
+    function reset() {
+      document.getElementById('result').style.display = 'none';
+      showError('');
+      fileInput.value = '';
+    }
+  </script>
+</body>
+</html>
